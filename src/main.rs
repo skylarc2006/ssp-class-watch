@@ -1,3 +1,7 @@
+use std::fs::File;
+use std::io::prelude::*;
+use std::path::Path;
+
 fn generate_watch(base_address: u32, offsets: Option<&[u32]>, current_variable: u32) -> String {
     const WORD_TYPE: u32 = 2; // 4 byte word type index
     let current_offset = (current_variable - 1) * 4;
@@ -51,8 +55,17 @@ fn main() {
     let offsets = Some(Vec::from([0x8u32, 0x54u32]));
     let size = 0x2a0u32;
 
+    let path = Path::new("output.txt");
+    let display = path.display();
+
+    let mut file = match File::create(&path) {
+        Err(why) => panic!("couldn't create {}: {}", display, why),
+        Ok(file) => file,
+    };
+
     for i in 1..=size / 4 {
-        let watch = generate_watch(base_address, offsets.as_deref(), i);
-        println!("\n{},", watch);
+        let mut watch = generate_watch(base_address, offsets.as_deref(), i);
+        watch += ",\n";
+        file.write_all(watch.as_bytes()).unwrap();
     }
 }
